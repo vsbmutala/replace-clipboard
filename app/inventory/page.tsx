@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Package, AlertCircle, Check, History, TrendingUp, TrendingDown, Box, BarChart3 } from 'lucide-react';
+import { Search, Package, AlertCircle, Check, History, TrendingUp, TrendingDown, Box, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
 import { InventoryItem } from '@/types';
 import Navigation from '@/components/navigation';
 
@@ -16,6 +16,12 @@ export default function InventoryPage() {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState<any[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [newItem, setNewItem] = useState({ name: '', quantity: 0, unit: 'units' });
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editItem, setEditItem] = useState<InventoryItem | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchInventory();
@@ -124,6 +130,98 @@ export default function InventoryPage() {
     setShowHistory(!showHistory);
   };
 
+  const handleAddItem = async () => {
+    if (!newItem.name || newItem.quantity < 0) return;
+
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newItem),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to add item');
+      }
+
+      setSuccessMessage(`${newItem.name} added successfully`);
+      setNewItem({ name: '', quantity: 0, unit: 'units' });
+      setShowAddModal(false);
+      
+      // Refresh inventory
+      await fetchInventory();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to add item');
+    }
+  };
+
+  const handleEditItem = async () => {
+    if (!editItem || !editItem.name || editItem.quantity < 0) return;
+
+    try {
+      const response = await fetch('/api/inventory', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(editItem),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update item');
+      }
+
+      setSuccessMessage(`${editItem.name} updated successfully`);
+      setEditItem(null);
+      setShowEditModal(false);
+      
+      // Refresh inventory
+      await fetchInventory();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update item');
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!deleteItemId) return;
+
+    try {
+      const response = await fetch(`/api/inventory?id=${deleteItemId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete item');
+      }
+
+      setSuccessMessage('Item deleted successfully');
+      setDeleteItemId(null);
+      setShowDeleteModal(false);
+      
+      // Refresh inventory
+      await fetchInventory();
+      
+      // Clear success message after 3 seconds
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete item');
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8 flex items-center justify-center">
@@ -145,6 +243,13 @@ export default function InventoryPage() {
             </div>
             <div className="flex gap-4">
               <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 hover:scale-105 shadow-md"
+              >
+                <Plus className="w-5 h-5" />
+                Add Item
+              </button>
+              <button
                 onClick={handleToggleHistory}
                 className="flex items-center gap-2 px-6 py-3 bg-white border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-sm"
               >
@@ -156,7 +261,7 @@ export default function InventoryPage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 hover:scale-105 transition-transform duration-300 shadow-lg">
             <div className="flex items-center justify-between">
               <div>
@@ -164,15 +269,6 @@ export default function InventoryPage() {
                 <p className="text-4xl font-bold text-white">{items.length}</p>
               </div>
               <Box className="w-12 h-12 text-blue-200" />
-            </div>
-          </div>
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 hover:scale-105 transition-transform duration-300 shadow-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-100 text-sm font-medium mb-1">Total Quantity</p>
-                <p className="text-4xl font-bold text-white">{items.reduce((sum, item) => sum + item.quantity, 0)}</p>
-              </div>
-              <BarChart3 className="w-12 h-12 text-green-200" />
             </div>
           </div>
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 hover:scale-105 transition-transform duration-300 shadow-lg">
@@ -268,8 +364,28 @@ export default function InventoryPage() {
                     <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
                     <p className="text-gray-500 text-sm">{item.quantity < 10 ? 'Low Stock' : 'In Stock'}</p>
                   </div>
-                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${item.quantity < 10 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
-                    {item.quantity < 10 ? 'Low Stock' : 'In Stock'}
+                  <div className="flex items-center gap-2">
+                    <div className={`px-3 py-1 rounded-full text-sm font-medium ${item.quantity < 10 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
+                      {item.quantity < 10 ? 'Low Stock' : 'In Stock'}
+                    </div>
+                    <button
+                      onClick={() => {
+                        setEditItem(item);
+                        setShowEditModal(true);
+                      }}
+                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => {
+                        setDeleteItemId(item.id);
+                        setShowDeleteModal(true);
+                      }}
+                      className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
                 
@@ -306,6 +422,153 @@ export default function InventoryPage() {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+
+        {/* Add Item Modal */}
+        {showAddModal && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Add New Item</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+                  <input
+                    type="text"
+                    value={newItem.name}
+                    onChange={(e) => setNewItem({ ...newItem, name: e.target.value })}
+                    placeholder="Enter item name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={newItem.quantity}
+                    onChange={(e) => setNewItem({ ...newItem, quantity: parseInt(e.target.value) || 0 })}
+                    placeholder="Enter quantity"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                  <input
+                    type="text"
+                    value={newItem.unit}
+                    onChange={(e) => setNewItem({ ...newItem, unit: e.target.value })}
+                    placeholder="e.g., lbs, boxes, units"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-4 mt-6">
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    setNewItem({ name: '', quantity: 0, unit: 'units' });
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleAddItem}
+                  disabled={!newItem.name || newItem.quantity < 0}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Add Item
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Edit Item Modal */}
+        {showEditModal && editItem && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Edit Item</h2>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Item Name</label>
+                  <input
+                    type="text"
+                    value={editItem.name}
+                    onChange={(e) => setEditItem({ ...editItem, name: e.target.value })}
+                    placeholder="Enter item name"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Quantity</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editItem.quantity}
+                    onChange={(e) => setEditItem({ ...editItem, quantity: parseInt(e.target.value) || 0 })}
+                    placeholder="Enter quantity"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Unit</label>
+                  <input
+                    type="text"
+                    value={editItem.unit}
+                    onChange={(e) => setEditItem({ ...editItem, unit: e.target.value })}
+                    placeholder="e.g., lbs, boxes, units"
+                    className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-4 mt-6">
+                <button
+                  onClick={() => {
+                    setShowEditModal(false);
+                    setEditItem(null);
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleEditItem}
+                  disabled={!editItem.name || editItem.quantity < 0}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-xl font-semibold hover:from-blue-600 hover:to-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteModal && (
+          <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-2xl">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4">Delete Item</h2>
+              <p className="text-gray-600 mb-6">Are you sure you want to delete this item? This action cannot be undone.</p>
+              <div className="flex gap-4">
+                <button
+                  onClick={() => {
+                    setShowDeleteModal(false);
+                    setDeleteItemId(null);
+                  }}
+                  className="flex-1 px-6 py-3 border border-gray-200 rounded-xl font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleDeleteItem}
+                  className="flex-1 px-6 py-3 bg-gradient-to-r from-red-500 to-rose-500 text-white rounded-xl font-semibold hover:from-red-600 hover:to-rose-600 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>

@@ -151,7 +151,18 @@ export default function ReceivePage() {
                 <tbody>
                   {extractedItems.map((item, index) => (
                     <tr key={index} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
-                      <td className="py-4 px-4 font-medium text-gray-900">{item.name}</td>
+                      <td className="py-4 px-4">
+                        <input
+                          type="text"
+                          value={item.name}
+                          onChange={(e) => {
+                            const updated = [...extractedItems];
+                            updated[index].name = e.target.value;
+                            setExtractedItems(updated);
+                          }}
+                          className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        />
+                      </td>
                       <td className="py-4 px-4">
                         <input
                           type="number"
