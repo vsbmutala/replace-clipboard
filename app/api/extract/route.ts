@@ -28,15 +28,6 @@ export async function POST(request: NextRequest) {
     const buffer = Buffer.from(bytes);
     const base64 = buffer.toString('base64');
 
-    // Prepare content for OpenAI
-    const content = {
-      type: 'image_url' as const,
-      image_url: {
-        url: `data:${file.type};base64,${base64}`,
-        detail: 'high',
-      },
-    };
-
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
       messages: [
@@ -63,10 +54,16 @@ Return format:
           role: 'user',
           content: [
             {
-              type: 'text',
+              type: 'text' as const,
               text: 'Extract all items and their quantities from this invoice.',
             },
-            content,
+            {
+              type: 'image_url' as const,
+              image_url: {
+                url: `data:${file.type};base64,${base64}`,
+                detail: 'high',
+              },
+            },
           ],
         },
       ],
