@@ -1,9 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { PDFParse } from 'pdf-parse';
+import * as XLSX from 'xlsx';
+import Papa from 'papaparse';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// Helper function to parse PDF
+async function parsePDF(buffer: Buffer): Promise<string> {
+  const parser = new PDFParse({ data: buffer });
+  const result = await parser.getText();
+  await parser.destroy();
+  return result.text;
+}
+
+// Helper function to parse Excel
+function parseExcel(buffer: Buffer): string {
+  const workbook = XLSX.read(buffer, { type: 'buffer' });
+  const sheetName = workbook.SheetNames[0];
+  const worksheet = workbook.Sheets[sheetName];
+  const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+  return jsonData.map((row: any) => row.join('\t')).join('\n');
+}
+
+// Helper function to parse CSV
+function parseCSV(text: string): string {
+  const parsed = Papa.parse(text, { header: false });
+  return parsed.data.map((row: any) => row.join('\t')).join('\n');
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -14,19 +40,61 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Check file type - images only for now
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
-    if (!allowedTypes.includes(file.type)) {
+    // Check file type - now supports images, PDF, Excel, and CSV
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf', 'text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
+    if (!allowedTypes.includes(file.type) && !file.name.endsWith('.csv')) {
       return NextResponse.json(
-        { error: 'Unsupported file type. Please upload an image (JPEG, PNG).' },
+        { error: 'Unsupported file type. Please upload an image (JPEG, PNG), PDF, Excel, or CSV file.' },
         { status: 400 }
       );
     }
 
-    // Convert file to base64
+    // Convert file to buffer
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const base64 = buffer.toString('base64');
+
+    let extractedText = '';
+    let isImage = false;
+
+    // Parse based on file type
+    if (file.type === 'application/pdf') {
+      extractedText = await parsePDF(buffer);
+    } else if (file.type.includes('excel') || file.type.includes('spreadsheet') || file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
+      extractedText = parseExcel(buffer);
+    } else if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+      const text = buffer.toString('utf-8');
+      extractedText = parseCSV(text);
+    } else {
+      // Image files
+      isImage = true;
+    }
+
+    // Prepare GPT request
+    let userContent: any;
+
+    if (isImage) {
+      const base64 = buffer.toString('base64');
+      userContent = [
+        {
+          type: 'text' as const,
+          text: 'Extract all items and their quantities from this invoice.',
+        },
+        {
+          type: 'image_url' as const,
+          image_url: {
+            url: `data:${file.type};base64,${base64}`,
+            detail: 'high',
+          },
+        },
+      ];
+    } else {
+      userContent = [
+        {
+          type: 'text' as const,
+          text: `Extract all items and their quantities from this invoice data:\n\n${extractedText}`,
+        },
+      ];
+    }
 
     const response = await openai.chat.completions.create({
       model: 'gpt-4o-mini',
@@ -55,19 +123,7 @@ Return format:
         },
         {
           role: 'user',
-          content: [
-            {
-              type: 'text' as const,
-              text: 'Extract all items and their quantities from this invoice.',
-            },
-            {
-              type: 'image_url' as const,
-              image_url: {
-                url: `data:${file.type};base64,${base64}`,
-                detail: 'high',
-              },
-            },
-          ],
+          content: userContent,
         },
       ],
       max_tokens: 2000,

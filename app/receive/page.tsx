@@ -197,11 +197,11 @@ export default function ReceivePage() {
             <div className="border-2 border-dashed border-gray-300 rounded-2xl p-12 text-center hover:border-blue-400 transition-colors">
               <Upload className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-xl font-semibold text-gray-900 mb-2">Upload Invoice</h3>
-              <p className="text-gray-600 mb-6">Supported formats: Image (JPEG, PNG)</p>
+              <p className="text-gray-600 mb-6">Supported formats: Image (JPEG, PNG), PDF, Excel, CSV</p>
               
               <input
                 type="file"
-                accept="image/jpeg,image/png,image/jpg"
+                accept="image/jpeg,image/png,image/jpg,application/pdf,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"
                 onChange={handleFileChange}
                 className="hidden"
                 id="file-upload"
