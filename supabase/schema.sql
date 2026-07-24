@@ -6,6 +6,7 @@ CREATE TABLE inventory (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   name TEXT NOT NULL UNIQUE,
   quantity INTEGER NOT NULL DEFAULT 0 CHECK (quantity >= 0),
+  unit TEXT DEFAULT 'units',
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -23,7 +24,8 @@ CREATE TABLE shipment_items (
   shipment_id UUID NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
   item_name TEXT NOT NULL,
   expected_quantity INTEGER NOT NULL,
-  actual_quantity INTEGER NOT NULL
+  actual_quantity INTEGER NOT NULL,
+  unit TEXT DEFAULT 'units'
 );
 
 -- Inventory history table

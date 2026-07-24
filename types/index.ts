@@ -1,12 +1,14 @@
 export interface ExtractedItem {
   name: string;
   quantity: number;
+  unit?: string;
 }
 
 export interface InventoryItem {
   id: string;
   name: string;
   quantity: number;
+  unit: string;
   created_at: string;
   updated_at: string;
 }
@@ -23,6 +25,7 @@ export interface ShipmentItem {
   item_name: string;
   expected_quantity: number;
   actual_quantity: number;
+  unit: string;
 }
 
 export interface InventoryHistory {
@@ -42,6 +45,7 @@ export interface ConfirmShipmentRequest {
     name: string;
     expected_quantity: number;
     actual_quantity: number;
+    unit?: string;
   }>;
 }
 

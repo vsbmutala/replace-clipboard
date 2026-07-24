@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
           item_name: item.name,
           expected_quantity: item.expected_quantity,
           actual_quantity: item.actual_quantity,
+          unit: item.unit || 'units',
         });
 
       if (shipmentItemError) {
@@ -73,7 +74,10 @@ export async function POST(request: NextRequest) {
 
         const { error: updateError } = await supabase
           .from('inventory')
-          .update({ quantity: newQuantity })
+          .update({ 
+            quantity: newQuantity,
+            unit: item.unit || existingItem.unit || 'units'
+          })
           .eq('id', existingItem.id);
 
         if (updateError) {
@@ -97,6 +101,7 @@ export async function POST(request: NextRequest) {
           .insert({
             name: item.name,
             quantity: item.actual_quantity,
+            unit: item.unit || 'units',
           })
           .select()
           .single();

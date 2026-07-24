@@ -33,12 +33,14 @@ export async function POST(request: NextRequest) {
       messages: [
         {
           role: 'system',
-          content: `You are an inventory extraction assistant. Extract only item names and quantities from invoices.
+          content: `You are an inventory extraction assistant. Extract item names, quantities, and units from invoices.
           
 Rules:
-- Extract ONLY item names and quantities
-- Ignore prices, taxes, totals, addresses, phone numbers, invoice metadata
+- Extract item names, quantities, and units
+- Common units: lbs, kg, oz, boxes, cartons, bags, cans, bottles, units, pieces, dozen, pack, case
+- If no unit is specified, default to "units"
 - Normalize item names (e.g., APPLE, Apple, apple should all become "Apple")
+- Normalize units (e.g., lb, lbs should be "lbs", box, boxes should be "boxes")
 - Return valid JSON only, no markdown formatting
 - Return empty array if no items found
 
@@ -46,7 +48,8 @@ Return format:
 [
   {
     "name": "Item Name",
-    "quantity": number
+    "quantity": number,
+    "unit": "unit name"
   }
 ]`,
         },
@@ -86,6 +89,7 @@ Return format:
       .map((item: any) => ({
         name: item.name.trim().charAt(0).toUpperCase() + item.name.trim().slice(1).toLowerCase(),
         quantity: Math.max(0, item.quantity),
+        unit: item.unit || 'units',
       }))
       .sort((a: any, b: any) => a.name.localeCompare(b.name));
 
