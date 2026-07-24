@@ -266,7 +266,7 @@ export default function InventoryPage() {
                 <div className="flex items-start justify-between mb-4">
                   <div>
                     <h3 className="text-xl font-bold text-gray-900">{item.name}</h3>
-                    <p className="text-gray-500 text-sm">In Stock</p>
+                    <p className="text-gray-500 text-sm">{item.quantity < 10 ? 'Low Stock' : 'In Stock'}</p>
                   </div>
                   <div className={`px-3 py-1 rounded-full text-sm font-medium ${item.quantity < 10 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
                     {item.quantity < 10 ? 'Low Stock' : 'In Stock'}

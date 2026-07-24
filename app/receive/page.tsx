@@ -128,10 +128,16 @@ export default function ReceivePage() {
           </div>
         ) : extractedItems.length > 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-lg">
-            <h2 className="text-2xl font-semibold text-gray-900 mb-6 flex items-center gap-2">
-              <Package className="w-6 h-6" />
-              Review Extracted Items
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                <Package className="w-6 h-6" />
+                Review Extracted Items
+              </h2>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl px-6 py-3 shadow-md">
+                <p className="text-blue-100 text-sm font-medium">Total Items</p>
+                <p className="text-2xl font-bold text-white">{extractedItems.length}</p>
+              </div>
+            </div>
 
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -152,7 +158,7 @@ export default function ReceivePage() {
                           min="0"
                           value={item.quantity}
                           onChange={(e) => handleQuantityChange(index, parseInt(e.target.value) || 0)}
-                          className="w-24 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-24 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </td>
                       <td className="py-4 px-4">
@@ -161,7 +167,7 @@ export default function ReceivePage() {
                           value={item.unit || 'units'}
                           onChange={(e) => handleUnitChange(index, e.target.value)}
                           placeholder="units"
-                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          className="w-32 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         />
                       </td>
                     </tr>
