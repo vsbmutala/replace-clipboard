@@ -38,9 +38,14 @@ function parseCSV(text: string): string {
 }
 
 export async function POST(request: NextRequest) {
+  console.log("1. Route entered");
   try {
+    
+console.log("2. Before formData");
     const formData = await request.formData();
+    console.log("3. After formData");
     const file = formData.get('file') as File;
+    console.log("4. File:", file?.name, file?.type);
 
     if (!file) {
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
