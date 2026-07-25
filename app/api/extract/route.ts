@@ -4,6 +4,12 @@ import { PDFParse } from 'pdf-parse';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
+console.log('=== ENV DEBUG ===');
+console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+console.log('OPENAI_API_KEY:', process.env.OPENAI_API_KEY ? 'SET' : 'NOT SET');
+console.log('=================');
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
