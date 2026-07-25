@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Package, AlertCircle, Check, History, TrendingUp, TrendingDown, Box, BarChart3, Plus, Edit, Trash2 } from 'lucide-react';
+import { Search, Package, AlertCircle, Check, History, TrendingUp, TrendingDown, Box, BarChart3, Plus, Edit, Trash2, LayoutGrid, Table } from 'lucide-react';
 import { InventoryItem } from '@/types';
 import Navigation from '@/components/navigation';
 
@@ -22,6 +22,7 @@ export default function InventoryPage() {
   const [editItem, setEditItem] = useState<InventoryItem | null>(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteItemId, setDeleteItemId] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<'cards' | 'table'>('cards');
 
   useEffect(() => {
     fetchInventory();
@@ -256,6 +257,20 @@ export default function InventoryPage() {
                 <History className="w-5 h-5" />
                 {showHistory ? 'Hide History' : 'View History'}
               </button>
+              <div className="flex bg-white border border-gray-200 rounded-xl p-1 shadow-sm">
+                <button
+                  onClick={() => setViewMode('cards')}
+                  className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'cards' ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                  <LayoutGrid className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setViewMode('table')}
+                  className={`p-2 rounded-lg transition-all duration-300 ${viewMode === 'table' ? 'bg-gradient-to-r from-blue-500 to-indigo-500 text-white' : 'text-gray-500 hover:bg-gray-100'}`}
+                >
+                  <Table className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -355,7 +370,7 @@ export default function InventoryPage() {
               {search ? 'No items found matching your search.' : 'No inventory items yet.'}
             </p>
           </div>
-        ) : (
+        ) : viewMode === 'cards' ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredItems.map((item) => (
               <div key={item.id} className="bg-white border border-gray-200 rounded-2xl p-6 hover:scale-105 hover:shadow-xl transition-all duration-300 group shadow-lg">
@@ -422,6 +437,91 @@ export default function InventoryPage() {
                 </div>
               </div>
             ))}
+          </div>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-2xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="bg-gradient-to-r from-blue-500 to-indigo-500">
+                    <th className="text-left py-4 px-6 font-semibold text-white">Item</th>
+                    <th className="text-left py-4 px-6 font-semibold text-white">Status</th>
+                    <th className="text-left py-4 px-6 font-semibold text-white">Quantity</th>
+                    <th className="text-left py-4 px-6 font-semibold text-white">Progress</th>
+                    <th className="text-left py-4 px-6 font-semibold text-white">Use Quantity</th>
+                    <th className="text-left py-4 px-6 font-semibold text-white">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.map((item) => (
+                    <tr key={item.id} className="border-b border-gray-100 hover:bg-gray-50 transition-colors">
+                      <td className="py-4 px-6">
+                        <div className="font-semibold text-gray-900">{item.name}</div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className={`inline-flex px-3 py-1 rounded-full text-sm font-medium ${item.quantity < 10 ? 'bg-red-100 text-red-700 border border-red-200' : 'bg-green-100 text-green-700 border border-green-200'}`}>
+                          {item.quantity < 10 ? 'Low Stock' : 'In Stock'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="text-2xl font-bold text-gray-900">{item.quantity}</span>
+                        <span className="text-gray-500 ml-1">{item.unit}</span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="w-32 bg-gray-100 rounded-full h-2">
+                          <div 
+                            className={`h-2 rounded-full transition-all duration-500 ${item.quantity < 10 ? 'bg-red-500' : 'bg-gradient-to-r from-green-500 to-emerald-500'}`}
+                            style={{ width: `${Math.min((item.quantity / 50) * 100, 100)}%` }}
+                          />
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max={item.quantity}
+                            value={updateQuantities[item.id] || ''}
+                            onChange={(e) => handleUpdateQuantity(item.id, parseInt(e.target.value) || 0)}
+                            placeholder="0"
+                            className="w-20 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-gray-900 placeholder-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
+                          />
+                          <button
+                            onClick={() => handleUpdate(item.id, item.name)}
+                            disabled={updating[item.id] || (updateQuantities[item.id] || 0) === 0}
+                            className="px-4 py-2 bg-gradient-to-r from-blue-500 to-indigo-500 text-white rounded-lg font-semibold hover:from-blue-600 hover:to-indigo-600 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed hover:scale-105 active:scale-95 shadow-md"
+                          >
+                            {updating[item.id] ? '...' : 'Use'}
+                          </button>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => {
+                              setEditItem(item);
+                              setShowEditModal(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                          >
+                            <Edit className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              setDeleteItemId(item.id);
+                              setShowDeleteModal(true);
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
