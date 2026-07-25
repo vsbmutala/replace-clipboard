@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { PDFParse } from 'pdf-parse';
 import * as XLSX from 'xlsx';
 import Papa from 'papaparse';
 
@@ -16,9 +15,8 @@ const openai = new OpenAI({
 
 // Helper function to parse PDF
 async function parsePDF(buffer: Buffer): Promise<string> {
-  const parser = new PDFParse({ data: buffer });
-  const result = await parser.getText();
-  await parser.destroy();
+  const pdfParse = (await import('pdf-parse')).default;
+  const result = await pdfParse(buffer);
   return result.text;
 }
 
