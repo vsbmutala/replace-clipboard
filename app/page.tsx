@@ -2,6 +2,11 @@ import Link from 'next/link';
 import { Package, Inbox } from 'lucide-react';
 
 export default function Home() {
+  console.log('=== CLIENT ENV DEBUG ===');
+  console.log('NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL);
+  console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'SET' : 'NOT SET');
+  console.log('========================');
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-8">
       <div className="max-w-4xl mx-auto">
